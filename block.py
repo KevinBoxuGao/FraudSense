@@ -33,7 +33,7 @@ class Chain():
 
 
     def create_gen_block(self):
-        return Block(0, datetime.datetime.utcnow(), 'BlockCondom', 'arbitrary')
+        return Block(0, datetime.datetime.utcnow(), {"sender-email": None, "recipient-email": None}, 'arbitrary')
 
 
     def add_block(self, d):
@@ -92,7 +92,7 @@ class Chain():
         return temp
     
 
-    def get_last_transaction(self, userid):
+    def get_last_transaction(self, user_email):
         for i in range(len(self.blocks) - 1, -1, -1):
             if self.blocks[i].data["sender-email"] == user_email:
                 return self.blocks[i]

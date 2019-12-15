@@ -1,7 +1,7 @@
 import flask
 import shodan
 import vincenty
-import pickle
+import json
 import block
 from classifier import Classifier, one_hot_vectorize, os_identifier_map, browser_identifier_map, device_type_map, dev_info_map, email_map
 from aggregate import interpret_browser_identifier, interpret_device_info, interpret_os_identifier
@@ -72,17 +72,29 @@ def verify():
     curr_transaction = flask.request.json
     last_transaction = block_chain.get_last_transaction(curr_transaction["sender-email"])
 
+   
     # Check if IP is from a VPN (on cloud)
-    ip_info = shodan_api.host(curr_transaction["device-ip"])
     on_proxy = 0
-    if "tags" in ip_info and "cloud" in ip_info["tags"]:
-        on_proxy = 1
-    
+    try:
+        ip_info = shodan_api.host(curr_transaction["device-ip"])
+        if "tags" in ip_info and "cloud" in ip_info["tags"]:
+            on_proxy = 1
+    except:
+        pass
+
+
+    os = interpret_os_identifier(curr_transaction["os-id"])
+    device_type = curr_transaction["device"]
+    device_info = interpret_device_info(curr_transaction["device-model"])
+    browser = interpret_browser_identifier(["browser-id"])
+   
     # Normalized to $100
     amount = curr_transaction["amt"] / 100
 
     # Normalized (from milliseconds) to days
-    time_diff = (curr_transaction["time"] - prev_transaction["time"]) / 31536000000
+    time_diff = 1
+    if last_transaction != None:
+        time_diff = (curr_transaction["time"] - last_transaction["time"]) / 31536000000
 
     # Normalized to 1/2 of the Earth's circumference (in kilometres)
     distance = vincenty.vincenty(curr_transaction["location"], curr_transaction["avg-location"]) / 20000
@@ -90,7 +102,7 @@ def verify():
     model_input = [amount, distance, time_diff, on_proxy] + \
                    one_hot_vectorize(os_identifier_map[curr_transaction[os]], 7) + \
                    one_hot_vectorize(browser_identifier_map[browser], 14) + \
-                   one_hot_vectorize(device_type_map[device_type], 3) + \
+                   one_hot_vectorize(device_type_map[curr], 3) + \
                    one_hot_vectorize(dev_info_map[device_info], 23)
                   
     output = classifier(model_input)

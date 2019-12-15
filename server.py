@@ -48,6 +48,14 @@ def home_page():
     return "Hello, World!"
 
 
+@server.route("/add-block", methods = ["POST"])
+def add_block():
+    data = flask.request.json
+    block_chain.add_block(data)
+
+    return "Block Added"
+
+
 @server.route("/verify", methods = ["GET", "POST"])
 def verify():
     # Request body:

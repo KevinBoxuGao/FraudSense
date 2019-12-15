@@ -43,4 +43,4 @@ def check_fraud():
     return data
 
 
-server.run(debug = True, port = "42069")
+server.run(host = "0.0.0.0", port = "42069")

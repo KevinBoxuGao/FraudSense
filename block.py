@@ -33,7 +33,7 @@ class Chain():
 
 
     def create_gen_block(self):
-        return Block(0, datetime.datetime.utcnow(), {"sender-email": None}, 'arbitrary')
+        return Block(0, datetime.datetime.utcnow(), {"senderEmail": None}, 'arbitrary')
 
 
     def add_block(self, d):
@@ -87,14 +87,14 @@ class Chain():
     def search(self, userid):
         for block in self.blocks:
             temp = []
-            if block.data["sender-email"] == userid:
+            if block.data["senderEmail"] == userid:
                 temp.append(block)
         return temp
     
 
     def get_last_transaction(self, user_email):
         for i in range(len(self.blocks) - 1, -1, -1):
-            if self.blocks[i].data["sender-email"] == user_email:
+            if self.blocks[i].data["senderEmail"] == user_email:
                 return self.blocks[i]
         else:
             return None

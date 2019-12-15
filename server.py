@@ -69,13 +69,16 @@ def verify():
     curr_transaction = flask.request.json
     curr_transaction["browser-id"] = "chrome"
     curr_transaction["device"] = "mobile"
-    curr_transacton["device-model"] = "samsungA5"
+    curr_transaction["device-model"] = "samsungA5"
     curr_transaction["os-id"] = "android"
 
     last_transaction = block_chain.get_last_transaction(curr_transaction["senderEmail"])
 
     past_transactions = block_chain.search(curr_transaction["senderEmail"])
-    avg_location = list((sum([np.array(i.data["location"]) for i in past_transactions])) / len(past_transactions))
+    if len(past_transactions) != 0:
+        avg_location = list((sum([np.array(i.data["location"]) for i in past_transactions])) / len(past_transactions))
+    else:
+        avg_location = curr_transaction["location"]
 
     with open("users.json", "r") as r:
         users = json.load(r)

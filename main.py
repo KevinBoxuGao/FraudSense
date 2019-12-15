@@ -26,7 +26,7 @@ class classifier(nn.Module):
         # devicetype: len 3
         # deviceinfo: len 23
         
-        self.net = nn.RNN(input_size=51, hidden_size=2, num_layers=5, dropout=0.1, nonlinearity='relu', batch_first=True)
+        self.net = nn.RNN(input_size=51, hidden_size=2, num_layers=5, dropout=0.3, nonlinearity='relu', batch_first=True)
         self.afunc = nn.Softsign()
         #self.net.cuda()
 
@@ -77,7 +77,7 @@ def pop(array, val):
 
 def gen_rmat():
     m = torch.randn(5).abs()
-    m = m/(2*sum(m))
+    m = m/(5*sum(m))
     return m
 
 
@@ -87,7 +87,7 @@ def gen_inp_out_pair(user, rmat):
     susfactor = 0
     
     seed = random.uniform(0, 1)
-    if seed > 0.7+rmat[0]:
+    if seed > 0.75+rmat[0]:
         rdist = random.uniform(0.1, 1)
     else:
         rdist = random.uniform(0, 0.002)
@@ -96,14 +96,14 @@ def gen_inp_out_pair(user, rmat):
     susfactor += math.tanh(rdist/(dt+0.02))
 
     seed = random.uniform(0, 1)
-    if seed > 0.7+rmat[1]:
+    if seed > 0.75+rmat[1]:
         amt = random.uniform(1, 100)
         susfactor += math.tanh(amt/10)
     else:
         amt = random.uniform(0, 1)
 
     seed = random.uniform(0, 1)
-    if seed > 0.7+rmat[2]:
+    if seed > 0.75+rmat[2]:
         os = random.choice(pop(['android', 'windows', 'osx', 'ios', 'other', 'unknown', 'linux'], user.os))
         devtype = random.choice(pop(['mobile', 'desktop', ''], user.devtype))
         devinfo = random.choice(pop(['windows', 'pixel', 'blade', 'samsung', 'ilium', 'xt', 'lg', 'unknown', 'htc', 'zte', 'redmi', 'mac', 'moto', 'other', 'linux', 'sm', 'android', 'lenovo', 'ios', 'huawei', 'lm', 'nexus', 'z9'], user.devinfo))
@@ -114,7 +114,7 @@ def gen_inp_out_pair(user, rmat):
         devinfo = user.devinfo
     
     seed = random.uniform(0, 1)
-    if seed > 0.7+rmat[3]:
+    if seed > 0.75+rmat[3]:
         browser = random.choice(pop(['google search application', 'ie for tablet', 'firefox', 'opera', 'chrome for android', 'samsung browser', 'chrome', 'edge', 'safari', 'other', 'chrome for ios', 'ie for desktop', 'unknown', 'android browser'], user.browser))
         susfactor += 0.1
     else:
@@ -122,7 +122,7 @@ def gen_inp_out_pair(user, rmat):
 
     proxy = 0
     seed = random.uniform(0, 1)
-    if seed > 0.7+rmat[4]:
+    if seed > 0.75+rmat[4]:
         proxy = 1
         susfactor += 0.9
 
@@ -165,7 +165,7 @@ def accuracy(net, batchsize):
                     
         print("Accuracy",correct/tested)
 
-rmats = [gen_rmat() for i in range(1)]
+rmats = [gen_rmat() for i in range(2)]
 
 def train(net, criterion, optimizer, epochs, batchsize):
     for epoch in range(1, epochs+1):
@@ -200,7 +200,7 @@ users = [Account() for i in range(10000)]
 net = classifier()
 net.loadNet()
 criterion = nn.BCELoss()
-optimizer = radam.RAdam(net.parameters(), lr=1e-3, weight_decay=0.01, eps=1)
+optimizer = optim.Adam(net.parameters(), lr=1e-4, weight_decay=0.01, eps=1)
 train(net, criterion, optimizer, 10000, 32)
         
     

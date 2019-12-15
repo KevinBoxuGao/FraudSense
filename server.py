@@ -7,6 +7,8 @@ import json
 import block
 from classifier import Classifier, one_hot_vectorize, os_identifier_map, browser_identifier_map, device_type_map, dev_info_map, email_map
 from aggregate import interpret_browser_identifier, interpret_device_info, interpret_os_identifier
+import math
+import numpy as np
 
 # Exception class for server errors
 class InvalidUsage(Exception):
@@ -60,18 +62,19 @@ def verify():
     # Request body:
     #   "amt"
     #   "location"
-    #   "avg-location"
     #   "time"
-    #   "device-ip"
     #   "os-id"
-    #   "browser-id"
-    #   "device"
-    #   "device-model"
     #   "sender-email"
-    #   "recipient-email"
 
     curr_transaction = flask.request.json
+    curr_transaction["browser-id"] = "chrome"
+    curr_transaction["device"] = "mobile"
+    curr_transacton["device-model"] = "samsungA5"
+
     last_transaction = block_chain.get_last_transaction(curr_transaction["sender-email"])
+
+    past_transactions = block_chain.search(curr_transaction["sender-email"])
+    avg_location = list((sum([np.array(i.data["location"]) for i in past_transactions])) / len(past_transactions))
 
     with open("users.json", "r") as r:
         users = json.load(r)
@@ -83,9 +86,10 @@ def verify():
             users[curr_transaction["sender-email"]] = None
    
     # Check if IP is from a VPN (on cloud)
+    device_ip = flask.request.remote_addr
     on_proxy = 0
     try:
-        ip_info = shodan_api.host(curr_transaction["device-ip"])
+        ip_info = shodan_api.host(device_ip)
         if "tags" in ip_info and "cloud" in ip_info["tags"]:
             on_proxy = 1
     except:
@@ -106,7 +110,7 @@ def verify():
         time_diff = (curr_transaction["time"] - last_transaction.data["time"]) / 31536000000
 
     # Normalized to 1/2 of the Earth's circumference (in kilometres)
-    distance = vincenty.vincenty(curr_transaction["location"], curr_transaction["avg-location"]) / 20000
+    distance = vincenty.vincenty(curr_transaction["location"], avg_location) / 20000
 
     model_input = [amount, distance, time_diff, on_proxy] + \
                    one_hot_vectorize(os_identifier_map[os], 7) + \
@@ -121,9 +125,9 @@ def verify():
     with open("users.json", "w") as w:
         json.dump(users, w)
 
-    print(output)
+    print((math.tanh(distance) + math.tanh(amount/100)))
 
-    if output.view(-1)[1] < output.view(-1)[0] and output.view(-1)[0] > 0.5:
+    if output.view(-1)[0] * 0.2 + 0.8 * (math.tanh(distance) + math.tanh(amount/100)) < 0.7:
         # Verify block chain and delete fraudulent blocks.
         verified, fraudulent_idx = block_chain.verify()
         if not verified:

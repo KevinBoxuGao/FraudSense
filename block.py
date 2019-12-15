@@ -33,7 +33,7 @@ class Chain():
 
 
     def create_gen_block(self):
-        return Block(0, datetime.datetime.utcnow(), {"sender-email": None, "recipient-email": None}, 'arbitrary')
+        return Block(0, datetime.datetime.utcnow(), {"sender-email": None}, 'arbitrary')
 
 
     def add_block(self, d):
@@ -87,7 +87,7 @@ class Chain():
     def search(self, userid):
         for block in self.blocks:
             temp = []
-            if block.data["sender-email"] == userid or block.data["recipient-email"] == userid:
+            if block.data["sender-email"] == userid:
                 temp.append(block)
         return temp
     

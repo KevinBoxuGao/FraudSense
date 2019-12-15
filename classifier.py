@@ -39,7 +39,7 @@ class Classifier(nn.Module):
 
     def loadNet(self):
         try:
-            self.net.load_state_dict(torch.load("98pct.pt"))
+            self.net.load_state_dict(torch.load("alphafraud.pt"))
         except:
             print("no network found")
 

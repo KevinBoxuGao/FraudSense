@@ -5,6 +5,8 @@ import shodan
 import vincenty
 import pickle
 import block
+from classifier import Classifier, one_hot_vectorize, os_identifier_map, browser_identifier_map, device_type_map, dev_info_map, email_map
+from aggregate import interpret_browser_identifier, interpret_device_info, interpret_os_identifier
 
 # Exception class for server errors
 class InvalidUsage(Exception):
@@ -24,7 +26,8 @@ class InvalidUsage(Exception):
 
 # Get Model and Blockchain (ANONYMOUS FUNCTION IN classifier IS PLACEHOLDER)
 block_chain = block.Chain()
-classifier = lambda x: x
+classifier = Classifier()
+classifier.loadNet()
 
 # APIs
 shodan_api = shodan.Shodan("bPeoBUXYuSxvw4YlP0j47yBzsPsaNiYt")
@@ -78,7 +81,12 @@ def verify():
     # Normalized to 1/2 of the Earth's circumference (in kilometres)
     distance = vincenty.vincenty(curr_transaction["location"], curr_transaction["avg-location"]) / 20000
 
-    model_input = []
+    model_input = [amount, distance, time_diff, on_proxy] + \
+                   one_hot_vectorize(os_identifier_map[curr_transaction[os]], 7) + \
+                   one_hot_vectorize(browser_identifier_map[browser], 14) + \
+                   one_hot_vectorize(device_type_map[device_type], 3) + \
+                   one_hot_vectorize(dev_info_map[device_info], 23)
+                  
     output = classifier(model_input)
 
     if output[1] > 0.5:

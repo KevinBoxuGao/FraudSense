@@ -70,20 +70,21 @@ def verify():
     curr_transaction["browser-id"] = "chrome"
     curr_transaction["device"] = "mobile"
     curr_transacton["device-model"] = "samsungA5"
+    curr_transaction["os-id"] = "android"
 
-    last_transaction = block_chain.get_last_transaction(curr_transaction["sender-email"])
+    last_transaction = block_chain.get_last_transaction(curr_transaction["senderEmail"])
 
-    past_transactions = block_chain.search(curr_transaction["sender-email"])
+    past_transactions = block_chain.search(curr_transaction["senderEmail"])
     avg_location = list((sum([np.array(i.data["location"]) for i in past_transactions])) / len(past_transactions))
 
     with open("users.json", "r") as r:
         users = json.load(r)
 
         try:
-            last_state = torch.Tensor(users[curr_transaction["sender-email"]])
+            last_state = torch.Tensor(users[curr_transaction["senderEmail"]])
         except KeyError:
             last_state = None
-            users[curr_transaction["sender-email"]] = None
+            users[curr_transaction["senderEmail"]] = None
    
     # Check if IP is from a VPN (on cloud)
     device_ip = flask.request.remote_addr
@@ -120,7 +121,7 @@ def verify():
     print(amount, distance, time_diff, on_proxy)
                   
     output, state = classifier.forward(torch.Tensor([[model_input]]), last_state)
-    users[curr_transaction["sender-email"]] = state.tolist()
+    users[curr_transaction["senderEmail"]] = state.tolist()
     
     with open("users.json", "w") as w:
         json.dump(users, w)

@@ -80,12 +80,14 @@ def gen_rmat():
     m = m/(2*sum(m))
     return m
 
+
+
 # rmat has length 5, sum 0.5.
 def gen_inp_out_pair(user, rmat):
     susfactor = 0
     
     seed = random.uniform(0, 1)
-    if seed > rmat[0]:
+    if seed > 0.7+rmat[0]:
         rdist = random.uniform(0.1, 1)
     else:
         rdist = random.uniform(0, 0.002)
@@ -94,37 +96,37 @@ def gen_inp_out_pair(user, rmat):
     susfactor += math.tanh(rdist/(dt+0.02))
 
     seed = random.uniform(0, 1)
-    if seed > rmat[1]:
+    if seed > 0.7+rmat[1]:
         amt = random.uniform(1, 100)
-        susfactor += amt/100
+        susfactor += math.tanh(amt/10)
     else:
         amt = random.uniform(0, 1)
 
     seed = random.uniform(0, 1)
-    if seed > rmat[2]:
+    if seed > 0.7+rmat[2]:
         os = random.choice(pop(['android', 'windows', 'osx', 'ios', 'other', 'unknown', 'linux'], user.os))
         devtype = random.choice(pop(['mobile', 'desktop', ''], user.devtype))
         devinfo = random.choice(pop(['windows', 'pixel', 'blade', 'samsung', 'ilium', 'xt', 'lg', 'unknown', 'htc', 'zte', 'redmi', 'mac', 'moto', 'other', 'linux', 'sm', 'android', 'lenovo', 'ios', 'huawei', 'lm', 'nexus', 'z9'], user.devinfo))
-        susfactor += 0.1
+        susfactor += 0.2
     else:
         os = user.os
         devtype = user.devtype
         devinfo = user.devinfo
     
     seed = random.uniform(0, 1)
-    if seed > rmat[3]:
+    if seed > 0.7+rmat[3]:
         browser = random.choice(pop(['google search application', 'ie for tablet', 'firefox', 'opera', 'chrome for android', 'samsung browser', 'chrome', 'edge', 'safari', 'other', 'chrome for ios', 'ie for desktop', 'unknown', 'android browser'], user.browser))
-        susfactor *= 1.2
+        susfactor += 0.1
     else:
         browser = user.browser
 
     proxy = 0
     seed = random.uniform(0, 1)
-    if seed > rmat[4]:
+    if seed > 0.7+rmat[4]:
         proxy = 1
         susfactor += 0.9
 
-    if susfactor > 0.8:
+    if susfactor > 0.9:
         susfactor = 1
     else:
         susfactor = 0
@@ -137,7 +139,7 @@ def gen_inp_out_pair(user, rmat):
 
 
 def group(array, batchsize):
-    return [array[i*batchsize:min((i+1)*batchsize, len(array))] for i in range(0, len(array)//batchsize+1)]
+    return [array[i*batchsize:min((i+1)*batchsize, len(array))] for i in range(0, len(array)//batchsize)]
 
 def accuracy(net, batchsize):
     with torch.no_grad():
@@ -163,11 +165,13 @@ def accuracy(net, batchsize):
                     
         print("Accuracy",correct/tested)
 
+rmats = [gen_rmat() for i in range(1)]
+
 def train(net, criterion, optimizer, epochs, batchsize):
     for epoch in range(1, epochs+1):
         running_loss = 0
         tested = 0
-        mat = gen_rmat()
+        mat = rmats[epoch%len(rmats)]
         data = [gen_inp_out_pair(user, mat) for user in users]
         for batch in group(data, batchsize):
             optimizer.zero_grad()
@@ -196,7 +200,7 @@ users = [Account() for i in range(10000)]
 net = classifier()
 net.loadNet()
 criterion = nn.BCELoss()
-optimizer = radam.RAdam(net.parameters(), lr=1e-7, weight_decay=0.01, eps=1)
+optimizer = radam.RAdam(net.parameters(), lr=1e-3, weight_decay=0.01, eps=1)
 train(net, criterion, optimizer, 10000, 32)
         
     

@@ -1,6 +1,4 @@
 import flask
-import torch
-import torch.nn as nn
 import shodan
 import vincenty
 import pickle

@@ -71,7 +71,7 @@ def verify():
     #   "recipient-email"
 
     curr_transaction = flask.request.json
-    last_transaction = block_chain.get_last_transaction(curr_transaction["sender-email"]).data
+    last_transaction = block_chain.get_last_transaction(curr_transaction["sender-email"])
 
     with open("users.json", "r") as r:
         users = json.load(r)
@@ -103,7 +103,7 @@ def verify():
     # Normalized (from milliseconds) to days
     time_diff = 1
     if last_transaction != None:
-        time_diff = (curr_transaction["time"] - last_transaction["time"]) / 31536000000
+        time_diff = (curr_transaction["time"] - last_transaction.data["time"]) / 31536000000
 
     # Normalized to 1/2 of the Earth's circumference (in kilometres)
     distance = vincenty.vincenty(curr_transaction["location"], curr_transaction["avg-location"]) / 20000
@@ -113,6 +113,7 @@ def verify():
                    one_hot_vectorize(browser_identifier_map[browser], 14) + \
                    one_hot_vectorize(device_type_map[device_type], 3) + \
                    one_hot_vectorize(dev_info_map[device_info], 23)
+    print(amount, distance, time_diff, on_proxy)
                   
     output, state = classifier.forward(torch.Tensor([[model_input]]), last_state)
     users[curr_transaction["sender-email"]] = state.tolist()
@@ -120,9 +121,9 @@ def verify():
     with open("users.json", "w") as w:
         json.dump(users, w)
 
-    if output.view(-1)[1] > 0.5:
-        return flask.jsonify(genuine = False)
-    elif output.view(-1)[0] > 0.5:
+    print(output)
+
+    if output.view(-1)[1] < output.view(-1)[0] and output.view(-1)[0] > 0.5:
         # Verify block chain and delete fraudulent blocks.
         verified, fraudulent_idx = block_chain.verify()
         if not verified:
@@ -131,7 +132,7 @@ def verify():
         block_chain.add_block(curr_transaction)
         return flask.jsonify(genuine = True)
     else:
-        raise InvalidUsage("Internal Server Error", 500)
+        return flask.jsonify(genuine = False)
 
 
 server.run(host = "0.0.0.0", port = "5050", debug = True)

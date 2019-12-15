@@ -70,7 +70,8 @@ def interpret_browser_identifier(b_id):
         return "unknown"
     else:
         return "other"
-    
+
+
 values = {'windows':'windows', 'mac':'mac', 'ios':'ios', 'samsung':'samsung', 'moto':'moto', 'xt':'motoroka', 'nexus':'nexus', 'android':'android', 'lg':'lg', 'moto':'moto', 'huawei':'huawei', 'htc':'htc', 'pixel':'pixel', 'sm':'samsung', 'redmi':'redmi', 'lenovo':'lenovo', 'linux':'linux', 'ilium':'ilium', 'zte':'zte', 'z9':'z9', 'blade':'blade', 'lm':'lg'}
 def interpret_device_info(d_inf):
     d_inf = d_inf.lower()
@@ -81,7 +82,6 @@ def interpret_device_info(d_inf):
             return value
     else:
         return "other"
-
 
 if __name__ == "__main__":
     os.chdir("data/")
@@ -164,8 +164,6 @@ if __name__ == "__main__":
             device_infos.append(row[index])
 
     # recognizing:
-    
-
 
     dev_info_parsed = list(set([interpret_device_info(b_id) for b_id in device_infos]))
 

@@ -1,5 +1,4 @@
-import app from 'firebase/app'
-import 'firebase/auth';
+import firebase from 'firebase';
 
 const config = {
   apiKey: "AIzaSyAjdId9pkfkA6tOMM7Iwdfex-72FT1juU4",
@@ -12,7 +11,12 @@ const config = {
   measurementId: "G-PXYGNLVX9H"
 };
 
-class Firebase {
+firebase.initializeApp(config)
+
+export const f = firebase;
+export const auth = firebase.auth();
+
+/*class Firebase {
   constructor() {
     app.initializeApp(config);
     this.auth = app.auth();
@@ -37,4 +41,4 @@ class Firebase {
   this.auth.currentUser.updatePassword(password);
 }
 
-export default Firebase;
+export default Firebase;*/

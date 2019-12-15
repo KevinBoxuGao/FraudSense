@@ -2,9 +2,8 @@ import React from 'react';
 import { Platform } from 'react-native';
 import { createStackNavigator } from 'react-navigation-stack';
 import { createBottomTabNavigator } from 'react-navigation-tabs';
-
+import { LinearGradient } from 'expo-linear-gradient';
 import TabBarIcon from '../components/TabBarIcon';
-
 import HomeScreen from '../screens/HomeScreen';
 import AccountScreen from '../screens/AccountScreen';
 import SettingsScreen from '../screens/SettingsScreen';
@@ -24,9 +23,9 @@ const HomeStack = createStackNavigator(
 
 HomeStack.navigationOptions = {
   tabBarLabel: 'Home',
-  tabBarIcon: ({ focused }) => (
+  tabBarIcon: ({ tintColor }) => (
     <TabBarIcon
-      focused={focused}
+      tintColor="black" activeTintColor="white"
       name={
         Platform.OS === 'ios'
           ? `ios-home`
@@ -34,6 +33,22 @@ HomeStack.navigationOptions = {
       }
     />
   ),
+  tabBarOptions: {
+    activeTintColor: 'white',
+    activeBackgroundColor: '#F46B45',
+    labelStyle: {
+      fontSize: 12,
+      color: 'black',
+    },
+    style: {
+      border: null,
+      shadowOffset:{  width: 0,  height: 16,  },
+      shadowColor: '#222',
+      shadowOpacity: 0.9,
+      shadowRadius: 20
+    },
+    showLabel: false,
+  }
 };
 
 HomeStack.path = '';
@@ -48,9 +63,22 @@ const AccountStack = createStackNavigator(
 
 AccountStack.navigationOptions = {
   tabBarLabel: 'Account',
-  tabBarIcon: ({ focused }) => (
-    <TabBarIcon focused={focused} name={Platform.OS === 'ios' ? 'ios-person' : 'md-person'} />
+  tabBarIcon: ({ tintColor }) => (
+    <TabBarIcon color={tintColor} name={Platform.OS === 'ios' ? 'ios-person' : 'md-person'} />
   ),
+  tabBarOptions: {
+    activeTintColor: 'white',
+    activeBackgroundColor: '#F46B45',
+    labelStyle: {
+      fontSize: 12,
+      color: 'black',
+    },
+    style: {
+      border: null,
+    },
+    showLabel: false,
+  }
+
 };
 
 AccountStack.path = '';
@@ -65,9 +93,21 @@ const SettingsStack = createStackNavigator(
 
 SettingsStack.navigationOptions = {
   tabBarLabel: 'Settings',
-  tabBarIcon: ({ focused }) => (
-    <TabBarIcon focused={focused} name={Platform.OS === 'ios' ? 'ios-options' : 'md-options'} />
+  tabBarIcon: ({ tintColor }) => (
+    <TabBarIcon color={tintColor} name={Platform.OS === 'ios' ? 'ios-settings' : 'md-settings'} />
   ),
+  tabBarOptions: {
+    activeTintColor: 'white',
+    activeBackgroundColor: '#F46B45',
+    labelStyle: {
+      fontSize: 12,
+      color: 'black',
+    },
+    style: {
+      border: null,
+    },
+    showLabel: false,
+  }
 };
 
 SettingsStack.path = '';

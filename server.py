@@ -1,4 +1,6 @@
 import flask
+import torch
+import torch.nn as nn
 import shodan
 import vincenty
 import json
@@ -50,7 +52,6 @@ def home_page():
 def add_block():
     data = flask.request.json
     block_chain.add_block(data)
-
     return "Block Added"
 
 
@@ -70,8 +71,16 @@ def verify():
     #   "recipient-email"
 
     curr_transaction = flask.request.json
-    last_transaction = block_chain.get_last_transaction(curr_transaction["sender-email"])
+    last_transaction = block_chain.get_last_transaction(curr_transaction["sender-email"]).data
 
+    with open("users.json", "r") as r:
+        users = json.load(r)
+
+        try:
+            last_state = torch.Tensor(users[curr_transaction["sender-email"]])
+        except KeyError:
+            last_state = None
+            users[curr_transaction["sender-email"]] = None
    
     # Check if IP is from a VPN (on cloud)
     on_proxy = 0
@@ -100,16 +109,20 @@ def verify():
     distance = vincenty.vincenty(curr_transaction["location"], curr_transaction["avg-location"]) / 20000
 
     model_input = [amount, distance, time_diff, on_proxy] + \
-                   one_hot_vectorize(os_identifier_map[curr_transaction[os]], 7) + \
+                   one_hot_vectorize(os_identifier_map[os], 7) + \
                    one_hot_vectorize(browser_identifier_map[browser], 14) + \
-                   one_hot_vectorize(device_type_map[curr], 3) + \
+                   one_hot_vectorize(device_type_map[device_type], 3) + \
                    one_hot_vectorize(dev_info_map[device_info], 23)
                   
-    output = classifier(model_input)
+    output, state = classifier.forward(torch.Tensor([[model_input]]), last_state)
+    users[curr_transaction["sender-email"]] = state.tolist()
+    
+    with open("users.json", "w") as w:
+        json.dump(users, w)
 
-    if output[1] > 0.5:
+    if output.view(-1)[1] > 0.5:
         return flask.jsonify(genuine = False)
-    elif output[0] > 0.5:
+    elif output.view(-1)[0] > 0.5:
         # Verify block chain and delete fraudulent blocks.
         verified, fraudulent_idx = block_chain.verify()
         if not verified:
@@ -121,4 +134,4 @@ def verify():
         raise InvalidUsage("Internal Server Error", 500)
 
 
-server.run(host = "0.0.0.0", port = "5050")
+server.run(host = "0.0.0.0", port = "5050", debug = True)

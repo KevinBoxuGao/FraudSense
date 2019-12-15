@@ -157,9 +157,11 @@ def train(net, criterion, optimizer, epochs, batchsize):
         for batch in group(data, batchsize):
             optimizer.zero_grad()
             inps = torch.tensor([[data[0]] for data in batch])
+            
             states = None
             if type(users[0].lastState) == type(torch.Tensor):
                 states = torch.tensor([user.lastState for user in users])
+
             outs = torch.tensor([one_hot_vectorize(int(data[1]), 2) for data in batch]).float().view(len(batch), 1, 2)
             
             out, newStates = net.forward(inps, states)
@@ -177,7 +179,6 @@ def train(net, criterion, optimizer, epochs, batchsize):
             accuracy(net, 32)
 
 if __name__ == "__main__":
-    os.chdir('/home/biscuit/Desktop/blockcondom/data')
     users = [Account() for i in range(10000)]
     net = Classifier()
     net.loadNet()

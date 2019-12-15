@@ -8,6 +8,7 @@ import aggregate
 import time
 import pickle
 import math
+import radam
 os.chdir('/home/biscuit/Desktop/blockcondom/data')
 
 class classifier(nn.Module):
@@ -74,11 +75,17 @@ def pop(array, val):
     array.remove(val)
     return array
 
-def gen_inp_out_pair(user):
+def gen_rmat():
+    m = torch.randn(5).abs()
+    m = m/(2*sum(m))
+    return m
+
+# rmat has length 5, sum 0.5.
+def gen_inp_out_pair(user, rmat):
     susfactor = 0
     
     seed = random.uniform(0, 1)
-    if seed > 0.95:
+    if seed > rmat[0]:
         rdist = random.uniform(0.1, 1)
     else:
         rdist = random.uniform(0, 0.002)
@@ -87,14 +94,14 @@ def gen_inp_out_pair(user):
     susfactor += math.tanh(rdist/(dt+0.02))
 
     seed = random.uniform(0, 1)
-    if seed > 0.95:
+    if seed > rmat[1]:
         amt = random.uniform(1, 100)
         susfactor += amt/100
     else:
         amt = random.uniform(0, 1)
 
     seed = random.uniform(0, 1)
-    if seed > 0.85:
+    if seed > rmat[2]:
         os = random.choice(pop(['android', 'windows', 'osx', 'ios', 'other', 'unknown', 'linux'], user.os))
         devtype = random.choice(pop(['mobile', 'desktop', ''], user.devtype))
         devinfo = random.choice(pop(['windows', 'pixel', 'blade', 'samsung', 'ilium', 'xt', 'lg', 'unknown', 'htc', 'zte', 'redmi', 'mac', 'moto', 'other', 'linux', 'sm', 'android', 'lenovo', 'ios', 'huawei', 'lm', 'nexus', 'z9'], user.devinfo))
@@ -105,7 +112,7 @@ def gen_inp_out_pair(user):
         devinfo = user.devinfo
     
     seed = random.uniform(0, 1)
-    if seed > 0.85:
+    if seed > rmat[3]:
         browser = random.choice(pop(['google search application', 'ie for tablet', 'firefox', 'opera', 'chrome for android', 'samsung browser', 'chrome', 'edge', 'safari', 'other', 'chrome for ios', 'ie for desktop', 'unknown', 'android browser'], user.browser))
         susfactor *= 1.2
     else:
@@ -113,11 +120,15 @@ def gen_inp_out_pair(user):
 
     proxy = 0
     seed = random.uniform(0, 1)
-    if seed > 0.95:
+    if seed > rmat[4]:
         proxy = 1
         susfactor += 0.9
 
-    susfactor = round(math.tanh(susfactor))
+    if susfactor > 0.8:
+        susfactor = 1
+    else:
+        susfactor = 0
+
     return [amt, rdist, dt, proxy] + \
             one_hot_vectorize(os_identifier_map[os], 7) + \
             one_hot_vectorize(browser_identifier_map[browser], 14) + \
@@ -132,7 +143,8 @@ def accuracy(net, batchsize):
     with torch.no_grad():
         correct = 0
         tested = 0
-        data = [gen_inp_out_pair(user) for user in users]
+        mat = gen_rmat()
+        data = [gen_inp_out_pair(user, mat) for user in users]
         for batch in group(data, batchsize):
             inps = torch.tensor([[data[0]] for data in batch])
             states = None
@@ -154,7 +166,9 @@ def accuracy(net, batchsize):
 def train(net, criterion, optimizer, epochs, batchsize):
     for epoch in range(1, epochs+1):
         running_loss = 0
-        data = [gen_inp_out_pair(user) for user in users]
+        tested = 0
+        mat = gen_rmat()
+        data = [gen_inp_out_pair(user, mat) for user in users]
         for batch in group(data, batchsize):
             optimizer.zero_grad()
             inps = torch.tensor([[data[0]] for data in batch])
@@ -172,7 +186,8 @@ def train(net, criterion, optimizer, epochs, batchsize):
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
-        print("Epoch:",epoch,"loss:",running_loss/len(data))
+            tested+=1
+        print("Epoch:",epoch,"loss:",running_loss/tested)
         net.saveNet()
         if epoch%10 == 0:
             accuracy(net, 32)
@@ -181,7 +196,7 @@ users = [Account() for i in range(10000)]
 net = classifier()
 net.loadNet()
 criterion = nn.BCELoss()
-optimizer = optim.Adam(net.parameters(), lr=1e-3, weight_decay=0.01)
+optimizer = radam.RAdam(net.parameters(), lr=1e-7, weight_decay=0.01, eps=1)
 train(net, criterion, optimizer, 10000, 32)
         
     
